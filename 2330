@@ -1,0 +1,81 @@
+import requests
+import pandas as pd
+import io
+import datetime
+import time
+import calendar
+urlr="https://www.twse.com.tw/exchangeReport/FMSRFK?response=csv&date=20201124&stockNo=2330"
+page2 = requests.get(url2)
+df = pd.read_html(page2.text)[0]
+df = df.drop([0,1,4,5,8,9],axis = 1)
+df.columns = df.iloc[0]
+df = df.iloc[1:]
+df["年"] = 0
+df["月"] = 0
+for t in range(1,len(df)+1):
+df["年"][t] = df["公開發行/上市(櫃)/發行日"][t].split("/")[0]
+df["月"][t] = df["公開發行/上市(櫃)/發行日"][t].split("/")[1]
+df = df.drop("公開發行/上市(櫃)/發行日",axis = 1)
+df = df.set_index("有價證券代號")
+def stock(stock_id,date_time):
+df2 = df_u(stock_id)
+url = "https://www.twse.com.tw/exchangeReport/FMSRFK?response=csv&date=" + date_time + "0101&stockNo=" + stock_id
+page = requests.get(url)
+use_text = page.text.splitlines()
+if date_time >= str(df2["年"][0]):
+if date_time > str(2015):
+use_text1 = pd.read_csv(io.StringIO(''.join([text[:-1] + "\n" for text in use_text[1:len(use_text)-4]])))
+else:
+use_text1 = pd.read_csv(io.StringIO(''.join([text[:-1] + "\n" for text in use_text[1:len(use_text)-3]])))
+for i in range(0,len(use_text1)):
+use_text1["月份"][i] =  calendar.month_abbr[use_text1["月份"][i]]
+df_text = use_text1[["年度","月份","最高價"]]
+df_text1 = df_text.rename(columns={'最高價':df2["有價證券名稱"][0]})
+for i in range(0,len(df_text1)):
+df_text1["年度"][i] = int(df_text1["年度"][i]) + 1911
+for i in range(0,len(df_text1)):
+df_text1["年度"][i] = str(df_text1["年度"][i]) + df_text1["月份"][i]
+df_text2 = df_text1.drop(["月份"],axis = 1)
+df_text2_T = df_text2.T
+df_text2_T.columns = df_text2_T.iloc[0]
+df_text2_T = df_text2_T.iloc[1:]
+df_text2_T.insert(0,"產業別",df2["產業別"][0])
+else:
+df_text2_T = "您輸入的年份該股票尚未上市"
+return df_text2_T
+ def stock_tw1(stock_id): 
+z = datetime.datetime.now()
+stock_a = df_u(stock_id)
+if stock_a["年"][0] > 1996:
+s_0 = stock(stock_id,str(stock_a["年"][0]))
+s_0_T = s_0.T
+for b in range(stock_a["年"][0]+1,z.year+1): 
+time.sleep(8)
+s_1 = stock(stock_id,str(b))
+s_1 = s_1.drop(["產業別"],axis = 1)
+s_0_T = s_0_T.append(s_1.T)
+return s_0_T.T
+else:
+s_0 = stock(stock_id,"1996")
+s_0_T = s_0.T
+for b in range(1997,z.year+1):
+time.sleep(8)
+s_1 = stock(stock_id,str(b))
+s_1 = s_1.drop(["產業別"],axis = 1)
+s_0_T = s_0_T.append(s_1.T)
+file_path = r"D:\python\stock_high"
+for a in df.index[0:]:
+time.sleep(5)
+try:
+   stock_tw2 = stock_tw1(str(a))
+   stock_tw2.to_csv(file_path + "\\" + str(a) + '.csv',encoding= 'utf_8_sig')
+   print("Successful!!" + " " + a)
+except: 
+   print("Fails at" + ' ' + a + "1")
+time.sleep(10)
+try:
+stock_tw2 = stock_tw1(str(a))
+stock_tw2.to_csv(file_path + "\\" + str(a) + '.csv',encoding= 'utf_8_sig')
+print("Successful!!" + " " + a)
+except:   
+print("Fails at" + ' ' + a + "2")
