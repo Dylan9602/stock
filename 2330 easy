@@ -1,0 +1,13 @@
+import requests
+import pandas as pd
+res = requests.get(https://isin.twse.com.tw/isin/class_main.jsp?owncode=&stockname=&isincode=&market=1&issuetype=1&industry_code=&Page=1&chklike=Y)
+print(res.text)
+df = pd.read_html(res.text)[0]
+df
+df = df.drop([0,1,5,8,9],axis = 1)
+df
+df.columns = df.iloc[0]
+df = df.iloc[1:]
+df
+df = df.set_index("有價證券代號").
+df
